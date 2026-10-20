@@ -1,0 +1,75 @@
+<!doctype html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>확률과 통계 1강 | 확률변수와 확률분포</title>
+<meta name="description" content="대학교 1학년 공대생을 위한 확률과 통계 1강: 슬라이드, 퀴즈, 애니메이션 플레이그라운드">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Noto+Sans+KR:wght@400;500;700;900&display=swap">
+<link rel="stylesheet" href="assets/css/site.css">
+<style>
+  .hero { position: relative; border-radius: 28px; overflow: hidden; background: #000; aspect-ratio: 16 / 9; }
+  .hero video { width: 100%; height: 100%; object-fit: cover; display: block; }
+  .hero .badge {
+    position: absolute; right: 14px; bottom: 14px; font-size: 13px; color: #fff;
+    background: rgba(11, 46, 92, .7); padding: 4px 12px; border-radius: 10px;
+  }
+  .title { margin: 28px 0 8px; }
+  .grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(260px, 1fr)); gap: 20px; margin-top: 28px; }
+  .tile { display: flex; flex-direction: column; gap: 10px; text-decoration: none; color: inherit; transition: transform .15s, border-color .15s; }
+  .tile:hover { transform: translateY(-4px); border-color: var(--sky); }
+  .tile .ico { font-size: 36px; }
+  .tile h2 { font-size: 24px; }
+  .tile .go { margin-top: auto; color: var(--blue); font-weight: 700; }
+  footer { margin-top: 40px; }
+</style>
+</head>
+<body>
+<header class="topbar">
+  <a href="./">확률과 통계</a>
+  <span class="sp"></span>
+  <nav>
+    <a href="slides/">슬라이드</a>
+    <a href="quiz/">퀴즈</a>
+    <a href="playground/">플레이그라운드</a>
+  </nav>
+</header>
+
+<main class="wrap">
+  <div class="hero">
+    <video src="assets/video/intro.mp4" poster="assets/img/poster-intro.png" autoplay muted loop playsinline controls aria-label="스마트 공장 센서 측정값이 종 모양 분포로 나타나는 인트로 영상"></video>
+    <span class="badge">AI 생성 영상 · Google Flow</span>
+  </div>
+
+  <p class="muted title">III. 통계 · 대학교 1학년 공학계열</p>
+  <h1>1강. 확률변수와 확률분포</h1>
+  <p class="muted" style="margin-top:8px">그림과 애니메이션으로 확률변수, 확률분포, 연속확률변수의 밀도곡선을 이해합니다.</p>
+
+  <div class="grid">
+    <a class="card tile" href="slides/">
+      <span class="ico" aria-hidden="true">🖥️</span>
+      <h2>슬라이드</h2>
+      <p>11장 · 비유 그림과 애니메이션. 방향키로 넘기고 F 키로 전체 화면.</p>
+      <span class="go">열기 →</span>
+    </a>
+    <a class="card tile" href="quiz/">
+      <span class="ico" aria-hidden="true">✅</span>
+      <h2>퀴즈</h2>
+      <p>8문항 · 즉시 해설 · 틀린 문제만 다시 풀기.</p>
+      <span class="go">시작 →</span>
+    </a>
+    <a class="card tile" href="playground/">
+      <span class="ico" aria-hidden="true">🧪</span>
+      <h2>플레이그라운드</h2>
+      <p>동전 던지기, 갈톤 보드, 정규분포 넓이를 직접 조작. Manim 코드도 함께 제공.</p>
+      <span class="go">실험하기 →</span>
+    </a>
+  </div>
+
+  <footer class="credit">
+    인트로 영상과 비유 이미지는 Google Flow로 생성한 AI 콘텐츠이며 설명용 그림입니다. 이미지 속 숫자와 도형은 정확한 수치가 아닙니다.
+  </footer>
+</main>
+</body>
+</html>

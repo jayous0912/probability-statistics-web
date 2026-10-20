@@ -1,0 +1,279 @@
+<!doctype html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>1강 슬라이드 | 확률과 통계</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Noto+Sans+KR:wght@400;500;700;900&display=swap">
+<link rel="stylesheet" href="../assets/css/site.css">
+<style>
+  html, body { overflow: hidden; background: #0a1a33; }
+  #viewport { position: fixed; inset: 0 0 56px 0; display: flex; align-items: center; justify-content: center; }
+  #deck { position: relative; width: 1920px; height: 1080px; transform-origin: center center; flex: none; background: var(--bg); box-shadow: 0 10px 50px rgba(0,0,0,.5); }
+
+  .s { position: absolute; inset: 0; display: none; flex-direction: column; gap: 40px; padding: 96px 128px 160px 152px; background: var(--bg); }
+  .s.active { display: flex; animation: fade .35s ease; }
+  @keyframes fade { from { opacity: 0; } to { opacity: 1; } }
+  .s::before { content: ""; position: absolute; left: 0; top: 0; bottom: 0; width: 24px; background: var(--blue); }
+  .s.dark::before, .s.full::before { display: none; }
+  .s h2 { font-size: 72px; font-weight: 700; line-height: 1.1; color: var(--navy); }
+  .ft { position: absolute; left: 152px; right: 128px; bottom: 64px; display: flex; justify-content: space-between; font-size: 24px; color: var(--gray); }
+
+  /* cover */
+  .s.dark { background: var(--navy); color: #fff; justify-content: center; padding-left: 160px; overflow: hidden; }
+  .s.dark .c1 { position: absolute; right: -120px; top: -140px; width: 700px; height: 700px; border-radius: 50%; background: #123F7A; }
+  .s.dark .c2 { position: absolute; right: 100px; bottom: -120px; width: 420px; height: 420px; border-radius: 50%; background: #1A5AB8; }
+  .s.dark .bar { position: absolute; left: 96px; top: 300px; width: 16px; height: 460px; background: var(--sky); }
+  .s.dark .eyebrow { font-size: 40px; font-weight: 700; color: var(--sky); position: relative; }
+  .s.dark h1 { font-size: 132px; font-weight: 900; line-height: 1.1; position: relative; }
+  .s.dark .sub { font-size: 36px; color: #BFD9F6; position: relative; }
+
+  /* intro full */
+  .s.full { padding: 0; background: #000; }
+  .s.full video { width: 1920px; height: 1080px; object-fit: cover; }
+  .s.full .tag { position: absolute; right: 128px; bottom: 64px; font-size: 24px; color: #fff; background: rgba(11,46,92,.65); padding: 8px 20px; border-radius: 12px; }
+
+  /* cards */
+  .row { display: flex; gap: 48px; flex: 1; }
+  .gcard { flex: 1; display: flex; flex-direction: column; align-items: center; gap: 28px; background: #fff; border: 2px solid var(--line); border-radius: 32px; padding: 64px 40px; }
+  .gcard .n { width: 128px; height: 128px; border-radius: 50%; background: var(--blue); color: #fff; font-size: 64px; font-weight: 700; display: flex; align-items: center; justify-content: center; }
+  .gcard h3 { font-size: 52px; color: var(--navy); }
+  .gcard p { font-size: 36px; line-height: 1.5; text-align: center; }
+
+  .split { display: flex; gap: 64px; align-items: center; flex: 1; }
+  .split ul { flex: 1; list-style: none; font-size: 44px; font-weight: 500; line-height: 1.7; }
+  .split ul li::before { content: "▪"; color: var(--blue); margin-right: 16px; }
+  .split.sm ul { font-size: 40px; }
+  .pic { display: flex; flex-direction: column; gap: 16px; }
+  .pic img, .pic video { display: block; border-radius: 24px; object-fit: cover; }
+  .pic .cr { font-size: 24px; color: var(--gray); text-align: right; }
+
+  .lead { font-size: 44px; font-weight: 700; color: var(--blue); }
+  .take { background: var(--pale); border-left: 12px solid var(--blue); border-radius: 16px; padding: 28px 44px; font-size: 44px; font-weight: 700; color: var(--navy); line-height: 1.3; }
+
+  table.dist { border-collapse: collapse; width: 100%; font-size: 40px; text-align: center; color: var(--navy); }
+  table.dist th { background: var(--navy); color: #fff; padding: 20px 8px; }
+  table.dist td { background: var(--pale); padding: 20px 8px; font-weight: 500; }
+  table.dist td:first-child { font-weight: 700; }
+  .vid { border: 2px solid var(--line); border-radius: 24px; display: block; object-fit: cover; }
+
+  .pcard { flex: 1; display: flex; flex-direction: column; align-items: center; gap: 24px; background: #fff; border: 2px solid var(--line); border-radius: 32px; padding: 40px; }
+  .pcard .tag2 { align-self: flex-start; font-size: 28px; font-weight: 700; color: #fff; background: var(--blue); padding: 8px 28px; border-radius: 999px; }
+  .pcard .f { font-size: 64px; font-weight: 700; color: var(--navy); text-align: center; }
+  .pcard .d { font-size: 36px; }
+  .stack { display: flex; gap: 32px; align-items: center; justify-content: center; }
+  .stack .bar { width: 1300px; display: flex; border-radius: 16px; overflow: hidden; }
+  .stack .bar div { padding: 32px 0; text-align: center; font-size: 56px; font-weight: 700; color: #fff; }
+  .stack .eq { font-size: 72px; font-weight: 700; color: var(--navy); }
+  .cap { font-size: 36px; font-weight: 700; color: var(--navy); text-align: center; }
+
+  .sum { flex: 1; display: flex; flex-direction: column; gap: 36px; }
+  .sum .r { flex: 1; display: flex; border-radius: 28px; overflow: hidden; }
+  .sum .l { width: 520px; background: var(--blue); color: #fff; font-size: 52px; font-weight: 700; display: flex; align-items: center; justify-content: center; }
+  .sum .t { flex: 1; background: var(--pale); color: var(--navy); font-size: 44px; font-weight: 700; padding: 0 56px; display: flex; align-items: center; }
+
+  /* chrome */
+  #bar { position: fixed; left: 0; right: 0; bottom: 0; height: 56px; background: var(--navy); color: #fff; display: flex; align-items: center; gap: 12px; padding: 0 16px; font-size: 15px; }
+  #bar a { color: #fff; text-decoration: none; font-weight: 700; margin-right: 8px; }
+  #bar button { background: rgba(255,255,255,.14); color: #fff; border: 0; border-radius: 10px; padding: 6px 14px; font-size: 15px; }
+  #bar button:hover { background: rgba(255,255,255,.28); }
+  #prog { flex: 1; height: 6px; background: rgba(255,255,255,.2); border-radius: 3px; overflow: hidden; }
+  #prog i { display: block; height: 100%; width: 0; background: var(--sky); transition: width .25s; }
+  #count { min-width: 56px; text-align: right; font-variant-numeric: tabular-nums; }
+  #hint { position: fixed; top: 16px; left: 50%; transform: translateX(-50%); background: rgba(11,46,92,.9); color: #fff; padding: 10px 20px; border-radius: 12px; font-size: 15px; opacity: 0; pointer-events: none; transition: opacity .3s; }
+  #hint.on { opacity: 1; }
+  #dots { display: flex; gap: 6px; }
+  @media (max-width: 640px) { #dots { display: none; } }
+</style>
+</head>
+<body>
+<div id="viewport">
+<div id="deck">
+
+  <section class="s dark" id="s1" data-title="표지">
+    <div class="c1"></div><div class="c2"></div><div class="bar"></div>
+    <p class="eyebrow">확률과 통계 &nbsp;|&nbsp; III. 통계</p>
+    <h1>1강<br>확률변수와 확률분포</h1>
+    <p class="sub">대학교 1학년 공학계열 &nbsp;·&nbsp; 교과서 81~86쪽</p>
+  </section>
+
+  <section class="s full" id="s2" data-title="인트로 영상">
+    <video src="../assets/video/intro.mp4" poster="../assets/img/poster-intro.png" muted loop playsinline controls aria-label="스마트 공장 센서 측정값이 종 모양 분포로 나타나는 8초 인트로 영상"></video>
+    <span class="tag">AI 생성 영상 · Google Flow</span>
+  </section>
+
+  <section class="s" id="s3" data-title="학습 목표">
+    <h2>학습 목표</h2>
+    <div class="row">
+      <div class="gcard"><div class="n">1</div><h3>확률변수</h3><p>표본공간의 결과를<br>숫자로 바꾸는 규칙</p></div>
+      <div class="gcard"><div class="n">2</div><h3>확률분포</h3><p>표와 막대그래프로<br>분포 나타내기</p></div>
+      <div class="gcard"><div class="n">3</div><h3>연속확률변수</h3><p>밀도곡선 아래 넓이로<br>확률 구하기</p></div>
+    </div>
+    <div class="ft"><span>확률과 통계 | 1강 확률변수와 확률분포</span><span class="pg"></span></div>
+  </section>
+
+  <section class="s" id="s4" data-title="확률변수">
+    <h2>확률변수 : 결과를 숫자로 바꾸는 규칙</h2>
+    <p class="lead">동전 2개 던지기 → X = 앞면의 수</p>
+    <img src="../assets/img/coins-rv.png" alt="동전 2개를 던진 네 가지 결과가 각각 X=2, 1, 1, 0으로 바뀌는 그림" style="width:1200px;height:422px;object-fit:contain;align-self:center">
+    <div class="take">X는 우연에 따라 0, 1, 2 중 하나의 값을 취하는 변수</div>
+    <div class="ft"><span>확률과 통계 | 1강 확률변수와 확률분포</span><span class="pg"></span></div>
+  </section>
+
+  <section class="s" id="s5" data-title="비유: 점수판">
+    <h2>비유 : 결과를 숫자로 바꾸는 점수판</h2>
+    <div class="split">
+      <ul><li>동전 던지기 결과 → 점수판 숫자</li><li>앞면의 수 = 확률변수 X의 값</li><li>같은 사건을 숫자로 표현</li></ul>
+      <div class="pic"><img src="../assets/img/coins-score.jpg" alt="날아가는 동전 두 개가 디지털 점수판의 숫자로 바뀌는 파랑 계열 일러스트" width="880" height="495"><span class="cr">이미지 : Google Flow로 생성한 AI 이미지</span></div>
+    </div>
+    <div class="ft"><span>확률과 통계 | 1강 확률변수와 확률분포</span><span class="pg"></span></div>
+  </section>
+
+  <section class="s" id="s6" data-title="확률분포">
+    <h2>확률분포 : 값별 확률의 분포</h2>
+    <div class="split">
+      <div style="width:780px;display:flex;flex-direction:column;gap:48px">
+        <table class="dist"><tr><th>X</th><th>0</th><th>1</th><th>2</th><th>합계</th></tr><tr><td>P(X=x)</td><td>1/4</td><td>1/2</td><td>1/4</td><td>1</td></tr></table>
+        <ul style="font-size:40px"><li>분포표 : 값과 확률의 짝</li><li>그래프 : 막대 높이 = 확률</li><li>확률질량함수 : P(X=x)</li></ul>
+      </div>
+      <video class="vid" src="../assets/video/coin.mp4" poster="../assets/img/poster-coin.png" muted loop playsinline controls width="840" height="472" aria-label="동전 네 가지 결과가 X=0, 1, 2 칸에 쌓여 막대분포가 되는 애니메이션"></video>
+    </div>
+    <div class="ft"><span>확률과 통계 | 1강 확률변수와 확률분포</span><span class="pg"></span></div>
+  </section>
+
+  <section class="s" id="s7" data-title="비유: 갈톤 보드">
+    <h2>비유 : 갈톤 보드</h2>
+    <div class="split">
+      <ul><li>공 1개 = 시행 1회</li><li>칸별 공의 수 = 확률분포</li><li>공이 많을수록 종 모양에 접근</li></ul>
+      <div class="pic"><img src="../assets/img/galton.jpg" alt="핀 사이로 떨어진 공들이 아래 칸마다 쌓여 종 모양 곡선을 이루는 갈톤 보드 일러스트" width="880" height="491"><span class="cr">이미지 : Google Flow로 생성한 AI 이미지 · <a href="../playground/#galton" style="color:inherit">직접 해 보기</a></span></div>
+    </div>
+    <div class="ft"><span>확률과 통계 | 1강 확률변수와 확률분포</span><span class="pg"></span></div>
+  </section>
+
+  <section class="s" id="s8" data-title="확률분포의 성질">
+    <h2>확률분포의 성질</h2>
+    <div class="row" style="flex:none">
+      <div class="pcard"><span class="tag2">성질 1</span><span class="f">0 ≤ P(X=x) ≤ 1</span><span class="d">각 확률은 0 이상 1 이하</span></div>
+      <div class="pcard"><span class="tag2">성질 2</span><span class="f">ΣP(X=x) = 1</span><span class="d">확률의 총합은 1</span></div>
+    </div>
+    <div class="stack"><div class="bar"><div style="flex:1;background:var(--sky);color:var(--navy)">1/4</div><div style="flex:2;background:var(--blue)">1/2</div><div style="flex:1;background:var(--navy)">1/4</div></div><span class="eq">= 1</span></div>
+    <p class="cap">동전 예 : 1/4 + 1/2 + 1/4 = 1</p>
+    <div class="ft"><span>확률과 통계 | 1강 확률변수와 확률분포</span><span class="pg"></span></div>
+  </section>
+
+  <section class="s" id="s9" data-title="비유: 계단과 경사로">
+    <h2>비유 : 계단과 경사로</h2>
+    <div class="split sm">
+      <ul><li>계단 = 이산확률변수 (셀 수 있는 값)</li><li>경사로 = 연속확률변수 (끊김 없는 값)</li><li>한 점의 확률 = 0, 구간의 넓이 = 확률</li></ul>
+      <div class="pic"><img src="../assets/img/stairs.jpg" alt="나란히 놓인 계단과 매끄러운 경사로를 보여주는 파랑 계열 아이소메트릭 일러스트" width="880" height="495"><span class="cr">이미지 : Google Flow로 생성한 AI 이미지</span></div>
+    </div>
+    <div class="ft"><span>확률과 통계 | 1강 확률변수와 확률분포</span><span class="pg"></span></div>
+  </section>
+
+  <section class="s" id="s10" data-title="연속확률변수">
+    <h2>연속확률변수 : 넓이 = 확률</h2>
+    <div class="split sm">
+      <video class="vid" src="../assets/video/density.mp4" poster="../assets/img/poster-density.png" muted loop playsinline controls width="960" height="540" aria-label="밀도곡선 아래 a와 b 사이의 넓이가 칠해지며 확률이 되는 애니메이션"></video>
+      <ul><li>구간 안의 모든 값 가능</li><li>예 : 부품 길이, 측정 오차</li><li>확률 = 곡선 아래 넓이</li><li>전체 넓이 = 1</li></ul>
+    </div>
+    <div class="ft"><span>확률과 통계 | 1강 확률변수와 확률분포</span><span class="pg"></span></div>
+  </section>
+
+  <section class="s" id="s11" data-title="정리">
+    <h2>정리</h2>
+    <div class="sum">
+      <div class="r"><div class="l">확률변수</div><div class="t">결과 → 숫자 (이산 / 연속)</div></div>
+      <div class="r"><div class="l">확률분포</div><div class="t">분포표 · 막대그래프 · 확률의 총합 = 1</div></div>
+      <div class="r"><div class="l">연속확률변수</div><div class="t">밀도곡선 아래 넓이 = 확률</div></div>
+    </div>
+    <div class="ft"><span>확률과 통계 | 1강 확률변수와 확률분포 &nbsp;·&nbsp; <a href="../quiz/" style="color:var(--blue)">퀴즈 풀기</a></span><span class="pg"></span></div>
+  </section>
+
+</div>
+</div>
+
+<div id="hint" role="status">← → 로 이동 · F 전체 화면 · 영상은 슬라이드 위에서 재생</div>
+<div id="bar">
+  <a href="../">홈</a>
+  <button id="prev" aria-label="이전 슬라이드">◀</button>
+  <button id="next" aria-label="다음 슬라이드">▶</button>
+  <div id="prog" role="progressbar" aria-label="진행률"><i></i></div>
+  <span id="count">1 / 11</span>
+  <button id="fs" aria-label="전체 화면">전체 화면</button>
+</div>
+
+<script>
+(function () {
+  var deck = document.getElementById('deck');
+  var slides = Array.prototype.slice.call(deck.querySelectorAll('.s'));
+  var idx = 0;
+  var hintEl = document.getElementById('hint');
+
+  function fit() {
+    var vw = window.innerWidth, vh = window.innerHeight - 56;
+    var k = Math.min(vw / 1920, vh / 1080);
+    deck.style.transform = 'scale(' + k + ')';
+  }
+
+  function show(n, fromHash) {
+    n = Math.max(0, Math.min(slides.length - 1, n));
+    slides.forEach(function (s, i) {
+      var on = i === n;
+      s.classList.toggle('active', on);
+      Array.prototype.forEach.call(s.querySelectorAll('video'), function (v) {
+        if (on) { var p = v.play(); if (p && p.catch) p.catch(function () {}); }
+        else { v.pause(); v.currentTime = 0; }
+      });
+    });
+    idx = n;
+    document.getElementById('count').textContent = (n + 1) + ' / ' + slides.length;
+    document.querySelector('#prog i').style.width = ((n + 1) / slides.length * 100) + '%';
+    document.getElementById('prog').setAttribute('aria-valuenow', Math.round((n + 1) / slides.length * 100));
+    Array.prototype.forEach.call(slides[n].querySelectorAll('.pg'), function (e) { e.textContent = (n + 1); });
+    document.title = slides[n].dataset.title + ' | 1강 확률과 통계';
+    if (!fromHash) history.replaceState(null, '', '#' + (n + 1));
+  }
+
+  function go(d) { show(idx + d); }
+
+  document.getElementById('prev').onclick = function () { go(-1); };
+  document.getElementById('next').onclick = function () { go(1); };
+  document.getElementById('fs').onclick = function () {
+    if (document.fullscreenElement) document.exitFullscreen();
+    else if (document.documentElement.requestFullscreen) document.documentElement.requestFullscreen();
+  };
+
+  document.addEventListener('keydown', function (e) {
+    if (e.target && /^(INPUT|TEXTAREA|SELECT)$/.test(e.target.tagName)) return;
+    var k = e.key;
+    if (k === 'ArrowRight' || k === 'PageDown' || k === 'ArrowDown' || (k === ' ' && !e.shiftKey)) { e.preventDefault(); go(1); }
+    else if (k === 'ArrowLeft' || k === 'PageUp' || k === 'ArrowUp' || (k === ' ' && e.shiftKey)) { e.preventDefault(); go(-1); }
+    else if (k === 'Home') show(0);
+    else if (k === 'End') show(slides.length - 1);
+    else if (k === 'f' || k === 'F') document.getElementById('fs').click();
+  });
+
+  var sx = null;
+  document.addEventListener('touchstart', function (e) { sx = e.touches[0].clientX; }, { passive: true });
+  document.addEventListener('touchend', function (e) {
+    if (sx === null) return;
+    var dx = e.changedTouches[0].clientX - sx; sx = null;
+    if (Math.abs(dx) > 50) go(dx < 0 ? 1 : -1);
+  }, { passive: true });
+
+  window.addEventListener('resize', fit);
+  window.addEventListener('hashchange', function () {
+    var n = parseInt(location.hash.slice(1), 10);
+    if (!isNaN(n)) show(n - 1, true);
+  });
+
+  fit();
+  var start = parseInt(location.hash.slice(1), 10);
+  show(isNaN(start) ? 0 : start - 1, true);
+  hintEl.classList.add('on');
+  setTimeout(function () { hintEl.classList.remove('on'); }, 3500);
+})();
+</script>
+</body>
+</html>

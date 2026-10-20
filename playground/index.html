@@ -1,0 +1,382 @@
+<!doctype html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>플레이그라운드 | 확률과 통계</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Noto+Sans+KR:wght@400;500;700;900&display=swap">
+<link rel="stylesheet" href="../assets/css/site.css">
+<style>
+  .wrap { max-width: 1040px; }
+  .tabs { display: flex; gap: 8px; margin: 22px 0 14px; flex-wrap: wrap; }
+  .tab { border: 2px solid var(--line); background: #fff; color: var(--navy); font-weight: 700; font-size: 16px; padding: 8px 18px; border-radius: 999px; }
+  .tab[aria-selected="true"] { background: var(--blue); border-color: var(--blue); color: #fff; }
+  .stage { background: #fff; border: 2px solid var(--line); border-radius: 20px; padding: 12px; }
+  canvas { display: block; width: 100%; height: auto; border-radius: 12px; background: #fff; }
+  .panel { display: grid; grid-template-columns: repeat(auto-fit, minmax(210px, 1fr)); gap: 14px 22px; margin-top: 16px; }
+  .ctl label { display: flex; justify-content: space-between; font-weight: 700; font-size: 15px; color: var(--navy); }
+  .ctl input[type=range] { width: 100%; accent-color: var(--blue); }
+  .btns { display: flex; gap: 10px; flex-wrap: wrap; margin-top: 14px; }
+  .desc { margin-top: 14px; }
+  .code { margin-top: 26px; }
+  .code h2 { font-size: 20px; display: flex; align-items: center; gap: 12px; flex-wrap: wrap; }
+  pre { margin-top: 10px; background: #0f2447; color: #e6efff; border-radius: 14px; padding: 16px 18px; overflow: auto; font: 13.5px/1.6 "Cascadia Code", Consolas, Menlo, monospace; max-height: 360px; }
+  .note { margin-top: 16px; font-size: 14px; background: var(--pale); border-left: 6px solid var(--blue); border-radius: 12px; padding: 12px 16px; }
+  .stat { font-weight: 700; color: var(--navy); }
+  .hide { display: none !important; }
+</style>
+</head>
+<body>
+<header class="topbar">
+  <a href="../">확률과 통계</a><span class="sp"></span>
+  <nav><a href="../slides/">슬라이드</a><a href="../quiz/">퀴즈</a><a href="./" aria-current="page">플레이그라운드</a></nav>
+</header>
+
+<main class="wrap">
+  <h1>플레이그라운드</h1>
+  <p class="muted" style="margin-top:6px">값을 바꿔 가며 분포가 어떻게 달라지는지 직접 확인해 보세요.</p>
+
+  <div class="tabs" role="tablist" aria-label="실험 선택">
+    <button class="tab" role="tab" id="t-coin" aria-selected="true" data-scene="coin">동전 던지기</button>
+    <button class="tab" role="tab" id="t-galton" aria-selected="false" data-scene="galton">갈톤 보드</button>
+    <button class="tab" role="tab" id="t-normal" aria-selected="false" data-scene="normal">정규분포 넓이</button>
+  </div>
+
+  <div class="stage"><canvas id="cv" width="960" height="540" role="img" aria-label="실험 화면"></canvas></div>
+
+  <div class="panel" id="panel"></div>
+  <div class="btns" id="btns"></div>
+  <p class="desc" id="desc"></p>
+
+  <section class="code">
+    <h2>같은 장면의 Manim 코드 <button class="btn ghost" id="copy" style="padding:6px 14px;font-size:14px">복사</button>
+      <a id="dl" class="btn ghost" style="padding:6px 14px;font-size:14px;text-decoration:none" download>파일 받기</a></h2>
+    <pre id="code" tabindex="0" aria-label="Manim 파이썬 코드"></pre>
+    <p class="note" id="run"></p>
+  </section>
+  <p class="note">위 화면은 브라우저에서 실시간으로 계산하는 자바스크립트 애니메이션입니다. 실제 Manim은 파이썬 프로그램이라 브라우저에서 직접 실행되지 않습니다. 코드를 내려받아 내 컴퓨터에서 렌더링하면 슬라이드의 6·10쪽 같은 영상이 만들어집니다.</p>
+</main>
+
+<script>
+(function () {
+  var NAVY = '#0B2E5C', BLUE = '#1E6FD9', SKY = '#4FA3F7', INK = '#1B2A41', GRAY = '#6B7A90', LINE = '#D6E4F7';
+  var FONT = '"Noto Sans KR","Malgun Gothic",sans-serif';
+  var cv = document.getElementById('cv'), g = cv.getContext('2d');
+  var W = 960, H = 540;
+  var dpr = Math.min(window.devicePixelRatio || 1, 2);
+  cv.width = W * dpr; cv.height = H * dpr; g.scale(dpr, dpr);
+
+  var $ = function (id) { return document.getElementById(id); };
+  var reduce = window.matchMedia && matchMedia('(prefers-reduced-motion: reduce)').matches;
+
+  // ---------- 공통 UI 빌더 ----------
+  function slider(id, label, min, max, step, val, fmt) {
+    var d = document.createElement('div'); d.className = 'ctl';
+    d.innerHTML = '<label for="' + id + '"><span>' + label + '</span><span id="' + id + 'v"></span></label>' +
+      '<input type="range" id="' + id + '" min="' + min + '" max="' + max + '" step="' + step + '" value="' + val + '">';
+    var inp = d.querySelector('input'), out = d.querySelector('span:last-child');
+    out.textContent = fmt ? fmt(+val) : val;
+    inp.addEventListener('input', function () { out.textContent = fmt ? fmt(+inp.value) : inp.value; });
+    return { el: d, input: inp };
+  }
+  function button(text, cls, fn) {
+    var b = document.createElement('button'); b.className = 'btn ' + (cls || ''); b.textContent = text; b.onclick = fn; return b;
+  }
+  function comb(n, k) { var r = 1; for (var i = 1; i <= k; i++) r = r * (n - k + i) / i; return Math.round(r); }
+
+  function axisText(t, x, y, size, color, align, weight) {
+    g.fillStyle = color || INK; g.font = (weight || 500) + ' ' + (size || 16) + 'px ' + FONT;
+    g.textAlign = align || 'left'; g.textBaseline = 'alphabetic'; g.fillText(t, x, y);
+  }
+  function clear() { g.clearRect(0, 0, W, H); g.fillStyle = '#fff'; g.fillRect(0, 0, W, H); }
+
+  // ================= 1. 동전 던지기 =================
+  var Coin = (function () {
+    var n = 2, counts, total, running, perFrame = 3, raf;
+    function reset() { counts = []; for (var i = 0; i <= n; i++) counts.push(0); total = 0; draw(); }
+    function toss(times) {
+      for (var t = 0; t < times; t++) {
+        var k = 0; for (var c = 0; c < n; c++) if (Math.random() < 0.5) k++;
+        counts[k]++; total++;
+      }
+    }
+    function loop() {
+      if (!running) return;
+      toss(perFrame); draw();
+      raf = requestAnimationFrame(loop);
+    }
+    function draw() {
+      clear();
+      var left = 90, right = W - 40, base = 430, top = 70;
+      var theory = [], maxv = 0, i;
+      for (i = 0; i <= n; i++) { theory.push(comb(n, i) / Math.pow(2, n)); maxv = Math.max(maxv, theory[i], total ? counts[i] / total : 0); }
+      var ymax = maxv * 1.18, sy = (base - top) / ymax;
+      // 눈금
+      var ticks = 4;
+      for (i = 0; i <= ticks; i++) {
+        var v = ymax * i / ticks, y = base - v * sy;
+        g.strokeStyle = LINE; g.lineWidth = 1; g.beginPath(); g.moveTo(left, y); g.lineTo(right, y); g.stroke();
+        axisText((v * 100).toFixed(0) + '%', left - 10, y + 5, 14, GRAY, 'right');
+      }
+      var slot = (right - left) / (n + 1), bw = Math.min(90, slot * 0.6);
+      for (i = 0; i <= n; i++) {
+        var cx = left + slot * (i + 0.5), f = total ? counts[i] / total : 0, h = f * sy;
+        g.fillStyle = SKY; g.fillRect(cx - bw / 2, base - h, bw, h);
+        // 이론값
+        var ty = base - theory[i] * sy;
+        g.strokeStyle = NAVY; g.lineWidth = 3; g.beginPath(); g.moveTo(cx - bw / 2 - 6, ty); g.lineTo(cx + bw / 2 + 6, ty); g.stroke();
+        g.fillStyle = NAVY; g.beginPath(); g.arc(cx, ty, 5, 0, 6.2832); g.fill();
+        axisText('X = ' + i, cx, base + 28, 17, INK, 'center', 700);
+        if (total) axisText((f * 100).toFixed(1) + '%', cx, base - h - 8, 15, BLUE, 'center', 700);
+      }
+      g.strokeStyle = GRAY; g.lineWidth = 2; g.beginPath(); g.moveTo(left, base); g.lineTo(right, base); g.stroke();
+      axisText(n + '개 동전 던지기 : X = 앞면의 수', left, 38, 24, NAVY, 'left', 700);
+      var mean = 0; for (i = 0; i <= n; i++) mean += i * counts[i];
+      mean = total ? mean / total : 0;
+      axisText('시행 ' + total.toLocaleString() + '회   평균 ' + mean.toFixed(2) + ' (이론 ' + (n / 2).toFixed(1) + ')', right, 38, 17, GRAY, 'right', 500);
+      // 범례
+      g.fillStyle = SKY; g.fillRect(left, 478, 18, 18); axisText('실험 결과', left + 26, 493, 15, INK);
+      g.fillStyle = NAVY; g.fillRect(left + 130, 485, 22, 3); g.beginPath(); g.arc(left + 141, 486.5, 5, 0, 6.2832); g.fill();
+      axisText('이론 확률', left + 162, 493, 15, INK);
+    }
+    return {
+      id: 'coin', label: '동전 던지기', file: 'coin_bars.py', cls: 'CoinBars',
+      desc: '동전 개수를 늘리면 분포가 점점 종 모양에 가까워집니다. 던진 횟수가 많을수록 막대(실험)가 이론 확률 표시(남색)에 가까워지는 것도 확인해 보세요.',
+      mount: function (panel, btns) {
+        var s1 = slider('n', '동전 개수', 1, 10, 1, n);
+        var s2 = slider('sp', '속도 (프레임당 던지는 수)', 1, 60, 1, perFrame);
+        s1.input.addEventListener('input', function () { n = +s1.input.value; reset(); });
+        s2.input.addEventListener('input', function () { perFrame = +s2.input.value; });
+        panel.appendChild(s1.el); panel.appendChild(s2.el);
+        var go = button('던지기 시작', '', function () {
+          running = !running; go.textContent = running ? '일시정지' : '던지기 시작';
+          if (running) loop();
+        });
+        btns.appendChild(go);
+        btns.appendChild(button('1000회 한 번에', 'ghost', function () { toss(1000); draw(); }));
+        btns.appendChild(button('초기화', 'ghost', function () { running = false; go.textContent = '던지기 시작'; reset(); }));
+        this._go = go; reset();
+      },
+      unmount: function () { running = false; cancelAnimationFrame(raf); }
+    };
+  })();
+
+  // ================= 2. 갈톤 보드 =================
+  var Galton = (function () {
+    var R = 10, rate = 12, balls = [], counts, total, running, acc = 0, last = 0, raf, showTheory = true;
+    var CX = W / 2, TOP = 50, PINB = 330, BASE = 500;
+    function geom() {
+      var dx = Math.min(56, 860 / (R + 1)), dy = (PINB - TOP) / R;
+      return { dx: dx, dy: dy };
+    }
+    function reset() { counts = []; for (var i = 0; i <= R; i++) counts.push(0); total = 0; balls = []; draw(); }
+    function spawn() {
+      var k = 0, path = [{ x: CX, y: 24 }], gm = geom();
+      for (var r = 0; r < R; r++) {
+        path.push({ x: CX + (k - r / 2) * gm.dx, y: TOP + r * gm.dy });
+        if (Math.random() < 0.5) k++;
+      }
+      path.push({ x: CX + (k - R / 2) * gm.dx, y: PINB + 18 });
+      balls.push({ path: path, t: 0, bin: k });
+    }
+    function step(ts) {
+      if (!running && !balls.length) { draw(); return; }
+      var dt = last ? Math.min(0.05, (ts - last) / 1000) : 0.016; last = ts;
+      if (running) { acc += dt * rate; while (acc >= 1 && balls.length < 300) { spawn(); acc -= 1; } if (acc > 5) acc = 0; }
+      var seg = 9 * dt;
+      for (var i = balls.length - 1; i >= 0; i--) {
+        var b = balls[i]; b.t += seg;
+        if (b.t >= b.path.length - 1) { counts[b.bin]++; total++; balls.splice(i, 1); }
+      }
+      draw();
+      raf = requestAnimationFrame(step);
+    }
+    function pos(b) {
+      var i = Math.min(b.path.length - 2, Math.floor(b.t)), f = b.t - i, p = b.path[i], q = b.path[i + 1];
+      return { x: p.x + (q.x - p.x) * f, y: p.y + (q.y - p.y) * f - Math.sin(Math.PI * f) * 8 };
+    }
+    function draw() {
+      clear();
+      var gm = geom(), i, r, j;
+      // 핀
+      g.fillStyle = GRAY;
+      for (r = 0; r < R; r++) for (j = 0; j <= r; j++) {
+        g.beginPath(); g.arc(CX + (j - r / 2) * gm.dx, TOP + r * gm.dy, 3.5, 0, 6.2832); g.fill();
+      }
+      // 칸
+      var maxc = 1; for (i = 0; i <= R; i++) maxc = Math.max(maxc, counts[i]);
+      var th = []; for (i = 0; i <= R; i++) th.push(total * comb(R, i) / Math.pow(2, R));
+      var maxv = Math.max(maxc, showTheory ? Math.max.apply(null, th) : 0);
+      var hmax = BASE - PINB - 36, sc = Math.min(hmax / maxv, 9);
+      var bw = gm.dx * 0.82;
+      for (i = 0; i <= R; i++) {
+        var cx = CX + (i - R / 2) * gm.dx, h = counts[i] * sc;
+        g.fillStyle = SKY; g.fillRect(cx - bw / 2, BASE - h, bw, h);
+        g.strokeStyle = LINE; g.lineWidth = 1; g.strokeRect(cx - bw / 2, BASE - hmax, bw, hmax);
+        axisText(i, cx, BASE + 20, 13, GRAY, 'center');
+      }
+      g.strokeStyle = GRAY; g.lineWidth = 2; g.beginPath(); g.moveTo(CX - (R / 2 + 0.6) * gm.dx, BASE); g.lineTo(CX + (R / 2 + 0.6) * gm.dx, BASE); g.stroke();
+      if (showTheory && total > 0) {
+        g.strokeStyle = NAVY; g.lineWidth = 3; g.beginPath();
+        for (i = 0; i <= R; i++) {
+          var x = CX + (i - R / 2) * gm.dx, y = BASE - th[i] * sc;
+          if (i === 0) g.moveTo(x, y); else g.lineTo(x, y);
+        }
+        g.stroke();
+      }
+      // 공
+      g.fillStyle = BLUE;
+      for (i = 0; i < balls.length; i++) { var p = pos(balls[i]); g.beginPath(); g.arc(p.x, p.y, 6, 0, 6.2832); g.fill(); }
+      // 입구
+      g.fillStyle = NAVY; g.beginPath(); g.moveTo(CX - 26, 8); g.lineTo(CX + 26, 8); g.lineTo(CX + 6, 22); g.lineTo(CX - 6, 22); g.closePath(); g.fill();
+      axisText('갈톤 보드 : 핀 ' + R + '줄', 24, 36, 22, NAVY, 'left', 700);
+      var mean = 0; for (i = 0; i <= R; i++) mean += i * counts[i];
+      axisText('공 ' + total.toLocaleString() + '개   평균 칸 ' + (total ? (mean / total).toFixed(2) : '–') + ' (이론 ' + (R / 2).toFixed(1) + ')', W - 24, 36, 16, GRAY, 'right');
+    }
+    return {
+      id: 'galton', label: '갈톤 보드', file: 'galton.py', cls: 'GaltonBoard',
+      desc: '공이 핀에 부딪힐 때마다 왼쪽 또는 오른쪽으로 같은 확률로 갈라집니다. 줄 수가 많을수록, 공이 많을수록 칸별 높이가 종 모양 확률분포(남색 선)에 가까워집니다.',
+      mount: function (panel, btns) {
+        var s1 = slider('rows', '핀 줄 수', 4, 14, 1, R);
+        var s2 = slider('rate', '속도 (초당 공 수)', 2, 40, 1, rate);
+        s1.input.addEventListener('input', function () { R = +s1.input.value; reset(); });
+        s2.input.addEventListener('input', function () { rate = +s2.input.value; });
+        panel.appendChild(s1.el); panel.appendChild(s2.el);
+        var tw = document.createElement('div'); tw.className = 'ctl';
+        tw.innerHTML = '<label style="gap:8px;justify-content:flex-start"><input type="checkbox" id="th" checked> 이론 분포 표시</label>';
+        tw.querySelector('input').addEventListener('change', function (e) { showTheory = e.target.checked; draw(); });
+        panel.appendChild(tw);
+        var go = button('공 떨어뜨리기', '', function () {
+          running = !running; go.textContent = running ? '일시정지' : '공 떨어뜨리기';
+          if (running) { last = 0; cancelAnimationFrame(raf); raf = requestAnimationFrame(step); }
+        });
+        btns.appendChild(go);
+        btns.appendChild(button('초기화', 'ghost', function () { running = false; go.textContent = '공 떨어뜨리기'; reset(); }));
+        reset();
+      },
+      unmount: function () { running = false; balls = []; cancelAnimationFrame(raf); }
+    };
+  })();
+
+  // ================= 3. 정규분포 넓이 =================
+  var Normal = (function () {
+    var mu = 0, sg = 1, a = -1, b = 1, shownB = null, raf, sweeping = false;
+    function erf(x) {
+      var s = x < 0 ? -1 : 1; x = Math.abs(x);
+      var t = 1 / (1 + 0.3275911 * x);
+      var y = 1 - (((((1.061405429 * t - 1.453152027) * t) + 1.421413741) * t - 0.284496736) * t + 0.254829592) * t * Math.exp(-x * x);
+      return s * y;
+    }
+    function cdf(x) { return 0.5 * (1 + erf((x - mu) / (sg * Math.SQRT2))); }
+    function pdf(x) { return Math.exp(-Math.pow(x - mu, 2) / (2 * sg * sg)) / (sg * Math.sqrt(2 * Math.PI)); }
+    function draw() {
+      clear();
+      var L = 60, Rr = W - 40, base = 440, top = 90, XMIN = -6, XMAX = 6, i;
+      var px = function (x) { return L + (x - XMIN) / (XMAX - XMIN) * (Rr - L); };
+      var ymax = pdf(mu) * 1.2, py = function (y) { return base - y / ymax * (base - top); };
+      var lo = Math.min(a, shownB === null ? b : shownB), hi = Math.max(a, shownB === null ? b : shownB);
+      // 눈금
+      for (i = XMIN; i <= XMAX; i++) {
+        g.strokeStyle = LINE; g.lineWidth = 1; g.beginPath(); g.moveTo(px(i), top - 10); g.lineTo(px(i), base); g.stroke();
+        axisText(i, px(i), base + 24, 15, GRAY, 'center');
+      }
+      // 넓이
+      g.beginPath(); g.moveTo(px(lo), base);
+      for (var x = lo; x <= hi + 1e-9; x += 0.02) g.lineTo(px(x), py(pdf(x)));
+      g.lineTo(px(hi), base); g.closePath(); g.fillStyle = 'rgba(79,163,247,0.75)'; g.fill();
+      // 곡선
+      g.beginPath(); g.strokeStyle = NAVY; g.lineWidth = 4;
+      for (x = XMIN; x <= XMAX + 1e-9; x += 0.02) { if (x === XMIN) g.moveTo(px(x), py(pdf(x))); else g.lineTo(px(x), py(pdf(x))); }
+      g.stroke();
+      g.strokeStyle = GRAY; g.lineWidth = 2; g.beginPath(); g.moveTo(L, base); g.lineTo(Rr, base); g.stroke();
+      // a, b
+      [[lo, 'a'], [hi, 'b']].forEach(function (p) {
+        g.strokeStyle = NAVY; g.lineWidth = 2; g.setLineDash([6, 5]); g.beginPath(); g.moveTo(px(p[0]), base); g.lineTo(px(p[0]), py(pdf(p[0]))); g.stroke(); g.setLineDash([]);
+        axisText(p[1], px(p[0]), base + 50, 20, NAVY, 'center', 900);
+      });
+      var prob = cdf(hi) - cdf(lo);
+      axisText('P(a ≤ X ≤ b) = ' + prob.toFixed(4) + '  (' + (prob * 100).toFixed(2) + '%)', W / 2, 44, 28, NAVY, 'center', 700);
+      axisText('N(' + mu.toFixed(1) + ', ' + sg.toFixed(1) + '²)   a = ' + lo.toFixed(1) + ',  b = ' + hi.toFixed(1), W / 2, 72, 17, GRAY, 'center');
+    }
+    function sweep() {
+      if (sweeping) return;
+      sweeping = true; var t0 = null, from = Math.min(a, b), to = Math.max(a, b), dur = 1800;
+      function f(ts) {
+        if (t0 === null) t0 = ts;
+        var k = Math.min(1, (ts - t0) / dur), e = k * k * (3 - 2 * k);
+        shownB = from + (to - from) * e; draw();
+        if (k < 1) raf = requestAnimationFrame(f); else { shownB = null; sweeping = false; draw(); }
+      }
+      shownB = from; raf = requestAnimationFrame(f);
+    }
+    var ui = {};
+    function setAB(na, nb) { a = na; b = nb; ui.a.input.value = a; ui.b.input.value = b; ui.a.input.dispatchEvent(new Event('input')); ui.b.input.dispatchEvent(new Event('input')); }
+    return {
+      id: 'normal', label: '정규분포 넓이', file: 'normal_area.py', cls: 'NormalArea',
+      desc: '평균 μ와 표준편차 σ를 바꿔 곡선 모양을 조절하고, a와 b로 구간을 정하면 그 아래 넓이(확률)가 계산됩니다. μ ± 1σ, 2σ, 3σ 버튼으로 약 68%, 95%, 99.7%를 확인해 보세요.',
+      mount: function (panel, btns) {
+        ui.mu = slider('mu', '평균 μ', -2, 2, 0.1, mu, function (v) { return v.toFixed(1); });
+        ui.sg = slider('sg', '표준편차 σ', 0.5, 2, 0.1, sg, function (v) { return v.toFixed(1); });
+        ui.a = slider('a', '구간 시작 a', -6, 6, 0.1, a, function (v) { return v.toFixed(1); });
+        ui.b = slider('b', '구간 끝 b', -6, 6, 0.1, b, function (v) { return v.toFixed(1); });
+        ui.mu.input.addEventListener('input', function () { mu = +ui.mu.input.value; draw(); });
+        ui.sg.input.addEventListener('input', function () { sg = +ui.sg.input.value; draw(); });
+        ui.a.input.addEventListener('input', function () { a = +ui.a.input.value; draw(); });
+        ui.b.input.addEventListener('input', function () { b = +ui.b.input.value; draw(); });
+        [ui.mu, ui.sg, ui.a, ui.b].forEach(function (u) { panel.appendChild(u.el); });
+        [1, 2, 3].forEach(function (k) {
+          btns.appendChild(button('μ ± ' + k + 'σ', 'ghost', function () {
+            var na = Math.max(-6, Math.round((mu - k * sg) * 10) / 10), nb = Math.min(6, Math.round((mu + k * sg) * 10) / 10);
+            setAB(na, nb);
+          }));
+        });
+        btns.appendChild(button('넓이 키우기 ▶', '', sweep));
+        draw();
+      },
+      unmount: function () { cancelAnimationFrame(raf); sweeping = false; shownB = null; }
+    };
+  })();
+
+  // ---------- 장면 전환 ----------
+  var scenes = { coin: Coin, galton: Galton, normal: Normal };
+  var current = null;
+  function switchTo(id) {
+    if (current) current.unmount();
+    current = scenes[id];
+    ['coin', 'galton', 'normal'].forEach(function (k) { $('t-' + k).setAttribute('aria-selected', k === id ? 'true' : 'false'); });
+    $('panel').innerHTML = ''; $('btns').innerHTML = '';
+    current.mount($('panel'), $('btns'));
+    $('desc').textContent = current.desc;
+    loadCode(current);
+    history.replaceState(null, '', '#' + id);
+  }
+
+  var codeCache = {};
+  function loadCode(sc) {
+    var url = 'manim/' + sc.file;
+    $('dl').href = url; $('dl').setAttribute('download', sc.file);
+    $('run').textContent = '내 컴퓨터에서 실행: pip install manim  →  python -m manim -pql ' + sc.file + ' ' + sc.cls;
+    if (codeCache[sc.file]) { $('code').textContent = codeCache[sc.file]; return; }
+    $('code').textContent = '코드를 불러오는 중…';
+    fetch(url).then(function (r) { if (!r.ok) throw 0; return r.text(); }).then(function (t) {
+      codeCache[sc.file] = t; if (current === sc) $('code').textContent = t;
+    }).catch(function () {
+      $('code').textContent = '코드를 불러오지 못했습니다. "파일 받기" 버튼으로 ' + sc.file + ' 파일을 내려받아 확인하세요.';
+    });
+  }
+
+  $('copy').onclick = function () {
+    var t = $('code').textContent, b = $('copy');
+    var done = function () { b.textContent = '복사됨'; setTimeout(function () { b.textContent = '복사'; }, 1500); };
+    if (navigator.clipboard && navigator.clipboard.writeText) navigator.clipboard.writeText(t).then(done, function () {});
+    else { var ta = document.createElement('textarea'); ta.value = t; document.body.appendChild(ta); ta.select(); try { document.execCommand('copy'); done(); } catch (e) {} document.body.removeChild(ta); }
+  };
+  Array.prototype.forEach.call(document.querySelectorAll('.tab'), function (t) { t.onclick = function () { switchTo(t.dataset.scene); }; });
+
+  var h = location.hash.slice(1);
+  switchTo(scenes[h] ? h : 'coin');
+})();
+</script>
+</body>
+</html>
